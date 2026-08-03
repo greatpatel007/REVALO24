@@ -1,7 +1,5 @@
-node_modules/
+﻿node_modules/
 dist/
-dist-ssr/
-*.local
 .env
 .env.*
 !.env.example
@@ -10,3 +8,9 @@ dist-ssr/
 .vite/
 coverage/
 *.tsbuildinfo
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+

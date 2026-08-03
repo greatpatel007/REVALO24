@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>REVALO24 — Find your place in Europe</title>
+    <meta name="description" content="The multilingual, GDPR-compliant property marketplace for the European Economic Area." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect x='1' y='1' width='38' height='38' rx='9' fill='%230F172A'/%3E%3Cpath d='M20 9l9 6.5v9L20 31l-9-6.5v-9L20 9z' stroke='%232563EB' stroke-width='2.2' fill='none'/%3E%3Ccircle cx='20' cy='20' r='3.4' fill='%2310B981'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Variable fonts with full weight ranges: font-extrabold (800) must be a
+         real face — prices/stats use it in Inter. Display (Jakarta) softens
+         mid-size extrabold via CSS; heroes keep true 800. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=Plus+Jakarta+Sans:wght@500..800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      /* Clear retired font-pair lab preference if present */
+      try { localStorage.removeItem("r24.fontPair"); } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>
