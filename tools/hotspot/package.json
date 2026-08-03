@@ -1,0 +1,16 @@
+{
+  "name": "revalo24-hotspot-test",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Visual hotspot (predicted attention) test — screenshots key pages and scores attention on conversion targets. Lives outside frontend/ on purpose.",
+  "scripts": {
+    "setup": "playwright install chromium-headless-shell && pip install -r requirements.txt",
+    "capture": "node capture.mjs",
+    "analyze": "python hotspot.py",
+    "hotspot": "node capture.mjs && python hotspot.py"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.0"
+  }
+}
