@@ -84,7 +84,7 @@ export function AgentLayout() {
       {/* Desktop sidebar only — mobile uses top bar + bottom tabs */}
       <aside className="hidden shrink-0 flex-col border-r border-slate-300 bg-white lg:flex lg:w-64 lg:overflow-y-auto">
         <div className="flex h-16 items-center px-4">
-          <Link to={to("/")} aria-label="REVALO24 home"><Logo /></Link>
+          <Link to={to("/")} aria-label="REVALO24 home" className="inline-flex items-center"><Logo /></Link>
         </div>
         <nav aria-label={t("agent.nav.dashboard")} className="flex flex-col gap-1 px-3 pt-2">
           {sidebarItems.map((i) => (
@@ -120,7 +120,7 @@ export function AgentLayout() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
         <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-300 bg-white px-3 lg:hidden">
-          <Link to={to("/")} aria-label="REVALO24 home"><Logo compact /></Link>
+          <Link to={to("/")} aria-label="REVALO24 home" className="inline-flex items-center"><Logo compact /></Link>
           <span className="flex items-center gap-1">
             <LanguageSelector />
             <MobileAccountMenu agent={agent} chip={verificationChip} onLogout={() => void logout()} />

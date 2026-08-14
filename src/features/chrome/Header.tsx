@@ -12,18 +12,45 @@ import { Badge } from "@/shared/ui/Badge";
 
 /** `compact` drops the wordmark below sm (top-nav use only) — the hotspot test
     showed the full logo stealing first-view attention on every mobile page.
-    Callers must keep an accessible name (aria-label) on the wrapping link. */
-export function Logo({ compact = false }: { compact?: boolean }) {
+    Callers must keep an accessible name (aria-label) on the wrapping link.
+    `onDark` uses the light lockup/mark for navy surfaces (footer). */
+export function Logo({ compact = false, onDark = false }: { compact?: boolean; onDark?: boolean }) {
+  const base = import.meta.env.BASE_URL;
+  const suffix = onDark ? "-on-dark" : "";
+  const mark = `${base}brand/logo-mark${suffix}.svg`;
+  const lockup = `${base}brand/logo-lockup${suffix}.svg`;
+
   return (
-    <span className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-navy">
-      <svg viewBox="0 0 40 40" className="size-8" aria-hidden>
-        <rect x="1" y="1" width="38" height="38" rx="9" fill="#0F172A" />
-        <path d="M20 9l9 6.5v9L20 31l-9-6.5v-9L20 9z" stroke="#2563EB" strokeWidth="2.2" fill="none" />
-        <circle cx="20" cy="20" r="3.4" fill="#10B981" />
-      </svg>
-      <span aria-hidden={compact || undefined} className={compact ? "hidden sm:inline" : undefined}>
-        REVALO<span className="text-blue-600">24</span>
-      </span>
+    <span className="inline-flex h-8 shrink-0 items-center leading-none">
+      {compact ? (
+        <>
+          <img
+            src={mark}
+            alt=""
+            width={32}
+            height={32}
+            className="block size-8 object-contain object-left sm:hidden"
+            decoding="async"
+          />
+          <img
+            src={lockup}
+            alt=""
+            width={170}
+            height={32}
+            className="hidden h-8 w-auto object-contain object-left sm:block"
+            decoding="async"
+          />
+        </>
+      ) : (
+        <img
+          src={lockup}
+          alt=""
+          width={170}
+          height={32}
+          className="block h-8 w-auto max-w-[min(100%,10.75rem)] object-contain object-left"
+          decoding="async"
+        />
+      )}
     </span>
   );
 }
@@ -178,7 +205,7 @@ export function Header() {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-shell items-center gap-3 px-4 sm:px-6">
-        <Link to={to("/")} aria-label="REVALO24 home" className="shrink-0">
+        <Link to={to("/")} aria-label="REVALO24 home" className="inline-flex h-11 shrink-0 items-center">
           <Logo compact />
         </Link>
 

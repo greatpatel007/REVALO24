@@ -5,6 +5,19 @@ All notable changes to the REVALO24 frontend are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] — 2026-08-14
+
+### Added
+- Official brand logo assets under `public/brand/` (mark + lockup) and foundation sources in `Assets/Foundations/`
+- Light and on-dark SVG variants for header/footer surfaces; favicon points at the mark
+
+### Changed
+- Site `Logo` uses the real REVALO24 mark/lockup instead of the placeholder SVG + text wordmark
+- Logo colors follow theme tokens: **action blue** (`#2563EB` / `#3B82F6` on navy) for the mark and wordmark, **champagne gold** (`#A98545`) for the accent squares
+- Tighter SVG viewBoxes and header flex alignment so the logo sits flush in nav bars
+
+---
+
 ## [0.1.0] — 2026-08-14
 
 First published SPA release on GitHub Pages (`main`), including agent analytics drill-down, mobile agent shell, home performance work, and earlier panel/exposé foundations.
@@ -86,6 +99,7 @@ Internal / pre-`0.1.0` milestones captured from git history.
 
 ---
 
-[0.1.0]: https://github.com/greatpatel007/REVALO24/compare/209732c...e10268f
+[0.1.1]: https://github.com/greatpatel007/REVALO24/compare/959f765...HEAD
+[0.1.0]: https://github.com/greatpatel007/REVALO24/compare/209732c...959f765
 [0.0.2]: https://github.com/greatpatel007/REVALO24/compare/b6ae7b7...209732c
 [0.0.1]: https://github.com/greatpatel007/REVALO24/commits/b6ae7b7
