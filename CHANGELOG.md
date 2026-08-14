@@ -99,7 +99,7 @@ Internal / pre-`0.1.0` milestones captured from git history.
 
 ---
 
-[0.1.1]: https://github.com/greatpatel007/REVALO24/compare/959f765...HEAD
+[0.1.1]: https://github.com/greatpatel007/REVALO24/compare/959f765...134f647
 [0.1.0]: https://github.com/greatpatel007/REVALO24/compare/209732c...959f765
 [0.0.2]: https://github.com/greatpatel007/REVALO24/compare/b6ae7b7...209732c
 [0.0.1]: https://github.com/greatpatel007/REVALO24/commits/b6ae7b7
