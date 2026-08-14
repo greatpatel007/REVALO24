@@ -1,0 +1,41 @@
+# REVALO24
+
+> Multilingual property marketplace for the European Economic Area (EEA).
+> Buy and rent open listings; confidential Off-Market deals for verified users.
+> Nine UI languages: EN, DE, FR, ES, PT, NL, CS, PL, SK.
+
+## Site
+
+- Product: REVALO24 PropTech SPA (React)
+- Audience: private buyers/tenants and licensed real-estate agents
+- Hosting intent: EU; privacy-preserving defaults
+
+## Primary routes (locale-prefixed)
+
+Replace `{locale}` with one of: `en` `de` `fr` `es` `pt` `nl` `cs` `pl` `sk`.
+
+- Home / search entry: `/{locale}/`
+- Property search (list): `/{locale}/properties`
+- Map search: `/{locale}/map`
+- Off-Market hub: `/{locale}/off-market`
+- Property detail: `/{locale}/property/{id}`
+- For agents (B2B landing): `/{locale}/agents`
+- Sign in: `/{locale}/login`
+- Register: `/{locale}/register`
+- About: `/{locale}/about`
+- Contact: `/{locale}/contact`
+- Privacy / legal: `/{locale}/privacy`, `/{locale}/terms`, `/{locale}/imprint`
+
+## Agent capabilities (human UI)
+
+- Search by city, address, or ZIP; filter buy vs rent
+- Browse featured and map results
+- Save favorites and searches when signed in
+- Agents manage listings, inquiries, placements, and subscriptions in `/agent`
+
+## Notes for agents
+
+- Prefer locale-prefixed URLs; default marketing locale is English (`/en/`).
+- Listing titles/descriptions may remain in the source language.
+- Do not invent inventory, prices, or unlock codes; use live page content.
+- Off-Market details stay gated until the product unlock flow succeeds.

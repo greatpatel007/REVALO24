@@ -1,10 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
+import { m } from "motion/react";
 import { Bathtub, Door, Heart, LockKey, MapPin, Ruler } from "@phosphor-icons/react";
 import type { Property } from "@/shared/types";
 import { fmtPrice, locationLabel } from "@/shared/lib/format";
+import { listingImageSrc, listingImageSrcSet, LISTING_THUMB_SIZES } from "@/shared/lib/images";
 import { useI18n } from "@/shared/i18n/I18nContext";
 import { Badge } from "@/shared/ui/Badge";
 import { EnergyClassBadge } from "@/features/property/EnergyClass";
+import { easeOut, inViewOnce, revealInView } from "@/shared/motion/presets";
 
 /** Key facts with Phosphor icons for at-a-glance scanning: area · rooms · baths.
     Three facts only (EU-portal convention — rooms, not beds, is the headline
@@ -41,11 +44,19 @@ interface Props {
 
 /** Off-Market imagery: photo stays visible but blurred, lock badge on top (DS: Duotone champagne). */
 export function OffMarketCover({ image, className = "" }: { image?: string; className?: string }) {
+  const srcSet = image ? listingImageSrcSet(image) : undefined;
   return (
-    <div className={`relative h-full w-full overflow-hidden bg-navy ${className}`}>
+    <div className={`relative h-full w-full overflow-hidden rounded-xl border border-slate-200 bg-navy ${className}`}>
       {image && (
-        <img src={image} alt="" aria-hidden loading="lazy"
-          className="h-full w-full scale-110 object-cover blur-[6px] brightness-[0.55]" />
+        <img
+          src={listingImageSrc(image, 640)}
+          srcSet={srcSet}
+          sizes={srcSet ? LISTING_THUMB_SIZES : undefined}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          className="h-full w-full scale-110 object-cover blur-[6px] brightness-[0.55]"
+        />
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-champagne-100">
         <span className="flex size-11 items-center justify-center rounded-full bg-navy/70 backdrop-blur-sm">
@@ -73,10 +84,13 @@ export function PropertyCard({ property: p, favorite, onToggleFavorite, compact,
         <OffMarketCover image={p.media.images[0]} />
       ) : (
         <img
-          src={p.media.images[0]}
+          src={listingImageSrc(p.media.images[0], 640)}
+          srcSet={listingImageSrcSet(p.media.images[0])}
+          sizes={LISTING_THUMB_SIZES}
           alt={p.title}
           loading="lazy"
-          className="h-full w-full object-cover outline outline-1 outline-offset-[-1px] outline-black/10 transition-transform duration-300 group-hover:scale-[1.03]"
+          decoding="async"
+          className="h-full w-full object-cover outline outline-1 outline-offset-[-1px] outline-black/[0.06] transition-transform duration-500 ease-[cubic-bezier(0.2,0,0,1)] group-hover:scale-[1.03]"
         />
       )}
       <div className="absolute left-3 top-3 flex gap-1.5">
@@ -89,7 +103,15 @@ export function PropertyCard({ property: p, favorite, onToggleFavorite, compact,
   const mediaClass = "relative block aspect-[8/5] w-full overflow-hidden bg-slate-300";
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-300 bg-white transition-shadow hover:shadow-elevation-md">
+    <m.article
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-[box-shadow,border-color] duration-200 ease-out hover:border-slate-300 hover:shadow-elevation-sm"
+      variants={revealInView}
+      initial="hidden"
+      whileInView="show"
+      viewport={inViewOnce}
+      whileHover={{ y: -3 }}
+      transition={easeOut}
+    >
       {asAction ? (
         <button type="button" onClick={onOffMarketClick} aria-label={t("card.unlockAria", { title: p.title })} className={`${mediaClass} cursor-pointer`}>
           {media}
@@ -126,7 +148,7 @@ export function PropertyCard({ property: p, favorite, onToggleFavorite, compact,
         </button>
       )}
 
-      <div className={`flex flex-1 flex-col gap-1.5 ${compact ? "p-3" : "p-4"}`}>
+      <div className={`flex flex-1 flex-col gap-1.5 ${compact ? "p-3.5" : "p-4"}`}>
         {/* EPBD Art. 12: the energy class must appear in property advertising —
             anchored to the right of the price row so it has a stable position
             on every card instead of trailing the facts icons. */}
@@ -151,7 +173,7 @@ export function PropertyCard({ property: p, favorite, onToggleFavorite, compact,
           {locationLabel(p)}
         </p>
       </div>
-    </article>
+    </m.article>
   );
 }
 

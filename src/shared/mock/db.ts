@@ -6,14 +6,27 @@ import type {
 import { COUNTRIES } from "@/shared/lib/constants";
 
 /* Curated Unsplash real-estate photography (DS §07: Unsplash + Pexels imagery). */
-const U = (id: string, w = 1000) =>
-  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=70`;
+const U = (id: string, w = 1000, q = 70) =>
+  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=${q}`;
 
 // Client-approved direction "Mediterranean & Sunny": light-flooded modern
 // villa, bright blue sky and pool — conveys quality of life + premium
-// properties. Calm sky upper-center keeps the headline + radial scrim
-// legible (DS hero rule).
-export const HERO_PHOTO = U("1600596542815-ffad4c1539a9", 2000);
+// properties. Calm sky upper-center keeps the headline legible (DS hero rule).
+// Self-hosted WebP under /public/hero (Unsplash photo-1600596542815-ffad4c1539a9)
+// so LCP is same-origin — Unsplash RTT was the Lighthouse score killer.
+const HERO_ASSET = (w: number) => `${import.meta.env.BASE_URL}hero/hero-${w}.webp`;
+
+export const HERO_PHOTO = HERO_ASSET(1280);
+
+/** Responsive hero sources for LCP — local WebP, no third-party CDN. */
+export const HERO_PHOTO_SRCSET = [
+  `${HERO_ASSET(640)} 640w`,
+  `${HERO_ASSET(960)} 960w`,
+  `${HERO_ASSET(1280)} 1280w`,
+  `${HERO_ASSET(1600)} 1600w`,
+].join(", ");
+
+export const HERO_PHOTO_SIZES = "100vw";
 
 const EXTERIORS = [
   U("1600585154340-be6161a56a0c"), // modern family house
@@ -124,6 +137,7 @@ function prop(p: Partial<Property> & Pick<Property, "id" | "title" | "listingTyp
     agentId: 101,
     createdAt: `2026-07-${String(2 + (p.id! % 24)).padStart(2, "0")}`,
     viewsTotal: 400 + p.id! * 137,
+    clicksTotal: 40 + p.id! * 17,
     ...p,
   } as Property;
 }
@@ -139,6 +153,7 @@ export const PROPERTIES: Property[] = [
       /* Demo tour + floor plan so the exposé media strip shows Available */
       videoUrl: "https://www.youtube.com/embed/EngW7tLk6R8",
       floorPlanUrl: U("1503387762-592deb58ef4e", 1400),
+      virtualTourUrl: "https://my.matterport.com/show/?m=Zh14WDtkjdC&play=1",
     },
     location: { country: "Germany", countryCode: "DE", county: "Bavaria", city: "München", postalCode: "80804", street: "Schwabing", geo: { lat: 48.16, lng: 11.58 } },
   }),
@@ -149,6 +164,7 @@ export const PROPERTIES: Property[] = [
     media: {
       images: gallery(2),
       floorPlanUrl: U("1503387762-592deb58ef4e", 1400),
+      virtualTourUrl: "https://my.matterport.com/show/?m=SxQL3iGyvQk&play=1",
     },
     location: { country: "Czechia", countryCode: "CZ", city: "Praha", postalCode: "186 00", street: "Karlín", geo: { lat: 50.09, lng: 14.45 } },
   }),
@@ -165,6 +181,7 @@ export const PROPERTIES: Property[] = [
     media: {
       images: gallery(9),
       videoUrl: "https://www.youtube.com/embed/EngW7tLk6R8",
+      virtualTourUrl: "https://my.matterport.com/show/?m=Zh14WDtkjdC&play=1",
     },
     location: { country: "Spain", countryCode: "ES", city: "Madrid", postalCode: "28006", street: "Salamanca", geo: { lat: 40.43, lng: -3.68 } },
   }),

@@ -281,6 +281,12 @@ export function ListingEditor() {
           lng: Number(fd.get("lng")) || existing?.location.geo.lng || 0,
         },
       },
+      media: {
+        images: images.length > 0 ? images : (existing?.media.images ?? [PLACEHOLDER_COVER]),
+        videoUrl: String(fd.get("video") || "").trim() || undefined,
+        floorPlanUrl: existing?.media.floorPlanUrl,
+        virtualTourUrl: String(fd.get("virtualTour") || "").trim() || undefined,
+      },
     })
       .then(() => {
         toast(isEdit ? t("agent.ed.saved") : t("agent.ed.created"));
@@ -419,7 +425,7 @@ export function ListingEditor() {
               style={{ width: `${(step / WIZARD_TOTAL) * 100}%` }}
             />
           </div>
-          <ol className="grid grid-cols-4 gap-2 sm:gap-3">
+          <ol className="hidden grid-cols-4 gap-2 sm:grid sm:gap-3">
             {stepLabels.map((label, i) => {
               const n = (i + 1) as WizardStep;
               const done = n < step;
@@ -477,9 +483,9 @@ export function ListingEditor() {
           <div className="flex flex-col gap-3 rounded-xl border border-slate-300 bg-white p-3 sm:col-span-2 lg:col-span-3 sm:p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-                <Seg ariaLabel={t("search.listingType")} value={listingType} onChange={(v) => { setListingType(v); markDirty(); }}
+                <Seg ariaLabel={t("search.listingType")} className="!flex w-full sm:!inline-flex sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none" value={listingType} onChange={(v) => { setListingType(v); markDirty(); }}
                   options={[{ value: "buy", label: t("search.forSale") }, { value: "rent", label: t("search.forRent") }]} />
-                <Seg ariaLabel={t("agent.list.thStatus")} wrap value={status} onChange={(v) => { setStatus(v); markDirty(); }}
+                <Seg ariaLabel={t("agent.list.thStatus")} wrap className="!flex w-full sm:!inline-flex sm:w-auto" value={status} onChange={(v) => { setStatus(v); markDirty(); }}
                   options={[{ value: "draft", label: t("status.draft") }, { value: "active", label: t("status.active") }, { value: "sold", label: t("status.sold") }, { value: "rented", label: t("status.rented") }]} />
               </div>
               {agent.isDeveloper && (
@@ -637,7 +643,14 @@ export function ListingEditor() {
               </div>
             ))}
           </div>
-          <Input name="video" label={t("agent.ed.video")} placeholder="https://youtube.com/watch?v=…" />
+          <Input name="video" label={t("agent.ed.video")} placeholder="https://youtube.com/watch?v=…" defaultValue={existing?.media.videoUrl} />
+          <Input
+            name="virtualTour"
+            label={t("agent.ed.tour")}
+            hint={t("agent.ed.tourHint")}
+            placeholder="https://my.matterport.com/show/?m=…"
+            defaultValue={existing?.media.virtualTourUrl}
+          />
           <label className="flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border border-dashed border-slate-400 bg-white p-6 text-center text-sm text-muted transition-colors hover:border-action hover:bg-blue-50/40">
             <input
               type="file"
@@ -689,7 +702,7 @@ export function ListingEditor() {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-300 pt-5">
+        <div className="sticky bottom-0 z-20 -mx-4 mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-300 bg-canvas/95 px-4 py-3 backdrop-blur-sm sm:-mx-0 sm:px-0 supports-[padding:max(0px)]:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Link to={to("/agent/listings")}><Button type="button" variant="ghost">{t("common.cancel")}</Button></Link>
           <div className="flex flex-wrap justify-end gap-2">
             {isEdit ? (

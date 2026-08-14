@@ -20,7 +20,7 @@ import {
 } from "@/shared/mock/db";
 import type {
   AgentDashboardStats, AgentProfile, AgentSubscription, ExposeRequest, ExposeResult, FtpCredentials,
-  ImportJob, Inquiry, Invoice, Locale, PlacementProduct, Property, PropertyStatus, SubscriptionPlan,
+  ImportJob, Inquiry, Invoice, ListingTrafficRow, Locale, PlacementProduct, Property, PropertyStatus, SubscriptionPlan,
 } from "@/shared/types";
 
 /* ---- session scoping (mock equivalent of the bearer token) ---- */
@@ -72,6 +72,7 @@ export async function saveAgentProperty(input: Partial<Property> & { id?: number
     status: (input.status ?? "draft") as PropertyStatus,
     createdAt: "2026-07-30",
     viewsTotal: 0,
+    clicksTotal: 0,
   } as Property;
   setAgentProps([created, ...props]);
   return created;
@@ -103,6 +104,25 @@ export async function getAgentStats(): Promise<AgentDashboardStats> {
     inquiriesTotal: inquiries.length,
     daily: dailyStats(scale),
   };
+}
+
+/** Per-listing views / clicks for the dashboard drill-down. */
+export async function getListingTraffic(): Promise<ListingTrafficRow[]> {
+  if (!USE_MOCKS) {
+    return request<{ data: ListingTrafficRow[] }>("/agent/stats/listings").then((r) => r.data);
+  }
+  await mockDelay(280);
+  return agentProps()
+    .map((p) => ({
+      id: p.id,
+      title: p.title,
+      status: p.status,
+      city: p.location.city,
+      country: p.location.country,
+      viewsTotal: p.viewsTotal ?? 0,
+      clicksTotal: p.clicksTotal ?? Math.round((p.viewsTotal ?? 0) * 0.12),
+    }))
+    .sort((a, b) => b.viewsTotal - a.viewsTotal);
 }
 
 /* Contact tracking (§3.4.3 "Personal Dashboard") — inquiries received from

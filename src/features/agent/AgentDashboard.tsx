@@ -106,12 +106,13 @@ export function AgentDashboard() {
     },
     {
       id: "sold", label: t("agent.dash.kpiSold"), value: stats.data?.soldCount,
-      icon: SealCheck,
+      icon: SealCheck, href: to("/agent/listings?status=sold"),
     },
     {
       id: "views", label: t("agent.dash.kpiViews7"), value: stats.data ? dViews.cur : undefined,
       pct: dViews.pct, icon: Eye,
       clicksLine: stats.data ? t("agent.dash.clicks7sub", { n: dClicks.cur.toLocaleString(locale) }) : undefined,
+      href: to("/agent/analytics"),
     },
     {
       id: "inq", label: t("agent.dash.kpiNewInq"), value: inq.data ? newInq : undefined,
@@ -211,7 +212,7 @@ export function AgentDashboard() {
       )}
 
       {attention.length > 0 && (
-        <section aria-label={t("agent.dash.attention")} className="mb-5 grid grid-cols-1 gap-3 sm:mb-6 md:grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
+        <section aria-label={t("agent.dash.attention")} className="mb-5 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 xl:grid-cols-3">
           {attention.map((a) => (
             <Link key={a.id} to={a.href}
               className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-4 py-3 transition-shadow hover:shadow-elevation-sm ${attnTone[a.tone]}`}>
@@ -271,29 +272,52 @@ export function AgentDashboard() {
       <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-6">
           <section className="rounded-xl border border-slate-300 bg-white p-4 sm:p-5">
-            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
+            <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <h2 className="font-display text-base font-bold">
                   {t("agent.dash.chart", { metric: t(metric === "views" ? "agent.dash.views" : "agent.dash.clicks"), n: range })}
                 </h2>
                 {stats.data && !chartEmpty && (
-                  <p className="text-xs tabular text-muted">
+                  <p className="mt-0.5 text-xs tabular text-muted">
                     {t("agent.dash.chartTotal", { total: rangeTotal.toLocaleString(locale), avg: rangeAvg })}
                   </p>
                 )}
-                <p className="text-xs text-muted">{t("agent.dash.chartRangeNote", { n: range })}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Seg ariaLabel={t("agent.dash.metricAria")} size="sm" value={metric} onChange={setMetric}
-                  options={[{ value: "views", label: t("agent.dash.views") }, { value: "clicks", label: t("agent.dash.clicks") }]} />
-                <Seg ariaLabel={t("agent.dash.rangeAria")} size="sm" value={range} onChange={setRange}
-                  options={[{ value: 7, label: t("agent.dash.days7") }, { value: 30, label: t("agent.dash.days30") }]} />
-                <Button size="sm" variant="ghost" onClick={exportCsv} title={t("agent.dash.csvAria")} aria-label={t("agent.dash.csvAria")}>
+                <Seg
+                  ariaLabel={t("agent.dash.metricAria")}
+                  size="sm"
+                  value={metric}
+                  onChange={setMetric}
+                  options={[
+                    { value: "views", label: t("agent.dash.views") },
+                    { value: "clicks", label: t("agent.dash.clicks") },
+                  ]}
+                />
+                <Seg
+                  ariaLabel={t("agent.dash.rangeAria")}
+                  size="sm"
+                  value={range}
+                  onChange={setRange}
+                  options={[
+                    { value: 7, label: t("agent.dash.days7") },
+                    { value: 30, label: t("agent.dash.days30") },
+                  ]}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0"
+                  onClick={exportCsv}
+                  disabled={!stats.data || chartEmpty}
+                  aria-label={t("agent.dash.csvAria")}
+                >
                   <DownloadSimple className="size-4.5" aria-hidden />
+                  {t("agent.dash.csvExport")}
                 </Button>
               </div>
             </div>
-            {stats.loading && <Skeleton className="h-36 w-full sm:h-44" />}
+            {stats.loading && <Skeleton className="h-40 w-full sm:h-44" />}
             {stats.error && <ErrorState onRetry={stats.reload} />}
             {stats.data && chartEmpty && (
               <EmptyState
@@ -312,7 +336,17 @@ export function AgentDashboard() {
                 ) : null}
               </EmptyState>
             )}
-            {stats.data && !chartEmpty && <BarChart data={daily} metric={metric} />}
+            {stats.data && !chartEmpty && (
+              <BarChart
+                data={daily}
+                metric={metric}
+                locale={locale}
+                ariaLabel={t("agent.dash.chart", {
+                  metric: t(metric === "views" ? "agent.dash.views" : "agent.dash.clicks"),
+                  n: range,
+                })}
+              />
+            )}
           </section>
 
           <section className="min-w-0 rounded-xl border border-slate-300 bg-white p-4 sm:p-5">
@@ -394,7 +428,7 @@ export function AgentDashboard() {
 
           <section className="rounded-xl border border-slate-300 bg-white p-4 sm:p-5">
             <h2 className="mb-3 font-display text-base font-bold">{t("agent.dash.quickActions")}</h2>
-            <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
+            <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-2 xl:grid-cols-1">
               {quickActions.map((a) => {
                 const enabled = a.needsCreate ? canCreate : approved;
                 const title = a.needsCreate
@@ -406,7 +440,7 @@ export function AgentDashboard() {
                       title={title}
                       className="flex min-h-11 cursor-not-allowed items-center gap-2.5 rounded-lg border border-slate-200 bg-canvas/60 px-3 py-2 text-sm font-semibold text-slate-400">
                       <a.icon weight="duotone" className="size-4.5 shrink-0 opacity-60" aria-hidden />
-                      <span className="min-w-0 truncate">{a.label}</span>
+                      <span className="min-w-0 text-pretty">{a.label}</span>
                     </span>
                   );
                 }
@@ -417,7 +451,7 @@ export function AgentDashboard() {
                     className="flex min-h-11 items-center gap-2.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-800 transition-colors hover:border-action hover:bg-blue-50/40 hover:text-blue-700"
                   >
                     <a.icon weight="duotone" className="size-4.5 shrink-0 text-blue-600" aria-hidden />
-                    <span className="min-w-0 truncate">{a.label}</span>
+                    <span className="min-w-0 text-pretty">{a.label}</span>
                   </Link>
                 );
               })}

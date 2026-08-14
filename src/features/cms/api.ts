@@ -9,7 +9,7 @@ const EN_CONTENT: Record<CmsPage, Omit<CmsContent, "locale" | "localeFallback">>
   about: {
     page: "about", title: "About REVALO24", updatedAt: "2026-06-12",
     blocks: [
-      { body: "REVALO24 is a multilingual, GDPR-compliant property marketplace built for the European Economic Area. We connect buyers, tenants and verified agents across borders — one listing, published in nine languages." },
+      { body: "REVALO24 is a multilingual property marketplace built for the European Economic Area. We connect buyers, tenants and verified agents across borders — one listing, published in nine languages." },
       { heading: "What makes us different", body: "Cross-border radius search, AI-generated exposés reviewed per language, and a secure Off-Market channel for confidential sales. Agents are verified through a 34c GewO onboarding process, so every listing comes from an accountable, licensed professional." },
       { heading: "Built for Europe", body: "Nine languages, EU hosting, privacy-preserving cookie defaults and WCAG AA accessibility are the baseline, not add-ons. Content on this page is CMS-managed and rendered in your locale." },
     ],

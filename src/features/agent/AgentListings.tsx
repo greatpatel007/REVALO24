@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { HouseLine, LockKey, Warning, X } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/i18n/I18nContext";
 import { useApi } from "@/shared/lib/useApi";
@@ -11,12 +11,24 @@ import { Button } from "@/shared/ui/Button";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { ErrorState } from "@/shared/ui/ErrorState";
+import { Seg } from "@/shared/ui/Seg";
 import { Skeleton } from "@/shared/ui/Skeleton";
 import { useToast } from "@/shared/ui/Toast";
+import type { PropertyStatus } from "@/shared/types";
+
+const STATUS_FILTERS = ["all", "active", "draft", "sold", "rented"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
+function isStatusFilter(v: string | null): v is StatusFilter {
+  return !!v && (STATUS_FILTERS as readonly string[]).includes(v);
+}
 
 export function AgentListings() {
   const { t, to, locale } = useI18n();
   const toast = useToast();
+  const [params, setParams] = useSearchParams();
+  const rawStatus = params.get("status");
+  const statusFilter: StatusFilter = isStatusFilter(rawStatus) ? rawStatus : "all";
   const { data, loading, error, reload } = useApi(getAgentProperties);
   const sub = useApi(getSubscription);
   const { approved } = useAgentGate();
@@ -24,11 +36,23 @@ export function AgentListings() {
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const rows = data ?? [];
-  const allChecked = rows.length > 0 && selected.size === rows.length;
+  const allRows = data ?? [];
+  const rows = useMemo(
+    () => (statusFilter === "all" ? allRows : allRows.filter((p) => p.status === statusFilter)),
+    [allRows, statusFilter],
+  );
+  const allChecked = rows.length > 0 && rows.every((p) => selected.has(p.id));
   /* Quota edge: at/over the plan limit the New-listing CTA locks with an upsell */
   const quotaFull = Boolean(sub.data && sub.data.listingsUsed >= sub.data.listingQuota);
   const canCreate = approved && !quotaFull;
+
+  const setStatusFilter = (v: StatusFilter) => {
+    setSelected(new Set());
+    const next = new URLSearchParams(params);
+    if (v === "all") next.delete("status");
+    else next.set("status", v);
+    setParams(next, { replace: true });
+  };
 
   const toggle = (id: number) =>
     setSelected((prev) => {
@@ -62,6 +86,21 @@ export function AgentListings() {
         ) : (
           <Button disabled title={t(approved ? "agent.list.quotaFull" : "agent.gate.incomplete")}>{t("agent.newListing")}</Button>
         )}
+      </div>
+
+      <div className="mb-4">
+        <Seg
+          ariaLabel={t("agent.list.filterStatus")}
+          size="sm"
+          wrap
+          className="!flex w-full sm:!inline-flex [&>button]:flex-1 sm:[&>button]:flex-none"
+          value={statusFilter}
+          onChange={(v) => setStatusFilter(v as StatusFilter)}
+          options={STATUS_FILTERS.map((s) => ({
+            value: s,
+            label: s === "all" ? t("agent.list.filterAll") : t(`status.${s}` as `status.${PropertyStatus}`),
+          }))}
+        />
       </div>
 
       {/* Verification Gate — restricted accounts can't publish */}
@@ -158,6 +197,7 @@ export function AgentListings() {
                     <span className="text-sm font-bold tabular">{fmtPrice(p, locale)}</span>
                     <StatusBadge status={p.status} />
                     <span className="tabular text-muted">{t("agent.list.viewsLine", { n: (p.viewsTotal ?? 0).toLocaleString(locale) })}</span>
+                    <span className="tabular text-muted">{t("agent.list.clicksLine", { n: (p.clicksTotal ?? 0).toLocaleString(locale) })}</span>
                     <span className="ml-auto flex items-center gap-3">
                       {p.placement
                         ? <Badge tone={p.placement === "top" ? "action" : "premium"}>{p.placement === "top" ? t("card.top") : t("card.featured")}</Badge>
@@ -185,6 +225,7 @@ export function AgentListings() {
               <th className="px-3 py-3 font-bold">{t("search.price")}</th>
               <th className="px-3 py-3 font-bold">{t("agent.list.thStatus")}</th>
               <th className="px-3 py-3 font-bold">{t("agent.dash.views")}</th>
+              <th className="px-3 py-3 font-bold">{t("agent.dash.clicks")}</th>
               <th className="px-3 py-3 font-bold">{t("agent.nav.placements")}</th>
               <th className="px-3 py-3" />
             </tr>
@@ -192,7 +233,7 @@ export function AgentListings() {
           <tbody className="divide-y divide-slate-200">
             {loading
               ? Array.from({ length: 4 }, (_, i) => (
-                  <tr key={i}><td colSpan={7} className="px-4 py-3"><Skeleton className="h-12 w-full" /></td></tr>
+                  <tr key={i}><td colSpan={8} className="px-4 py-3"><Skeleton className="h-12 w-full" /></td></tr>
                 ))
               : rows.map((p) => (
                   <tr key={p.id} className={selected.has(p.id) ? "bg-blue-50/60" : "hover:bg-canvas"}>
@@ -230,6 +271,7 @@ export function AgentListings() {
                     <td className="whitespace-nowrap px-3 py-3 font-bold tabular">{fmtPrice(p, locale)}</td>
                     <td className="px-3 py-3"><StatusBadge status={p.status} /></td>
                     <td className="px-3 py-3 tabular text-muted">{p.viewsTotal?.toLocaleString(locale)}</td>
+                    <td className="px-3 py-3 tabular text-muted">{(p.clicksTotal ?? 0).toLocaleString(locale)}</td>
                     <td className="px-3 py-3">
                       {p.placement
                         ? <Badge tone={p.placement === "top" ? "action" : "premium"}>{p.placement === "top" ? t("card.top") : t("card.featured")}</Badge>

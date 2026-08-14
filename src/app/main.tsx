@@ -1,8 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import "@fontsource-variable/inter/wght.css";
+import "@fontsource-variable/plus-jakarta-sans/wght.css";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { ToastProvider } from "@/shared/ui/Toast";
+import { LazyMotionRoot } from "@/shared/motion/LazyMotionRoot";
 import { App } from "./App";
 import "./index.css";
 
@@ -14,7 +17,9 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter basename={basename}>
       <AuthProvider>
         <ToastProvider>
-          <App />
+          <LazyMotionRoot>
+            <App />
+          </LazyMotionRoot>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

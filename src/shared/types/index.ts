@@ -32,6 +32,8 @@ export interface PropertyMedia {
   images: string[];
   videoUrl?: string;
   floorPlanUrl?: string;
+  /** Matterport / 3D walkthrough embed URL */
+  virtualTourUrl?: string;
 }
 
 export interface Property {
@@ -73,6 +75,8 @@ export interface Property {
   agentId: number;
   createdAt: string;
   viewsTotal?: number;
+  /** Contact / marker clicks attributed to this listing (agent analytics). */
+  clicksTotal?: number;
 }
 
 export interface PropertyFilters {
@@ -217,8 +221,28 @@ export interface Inquiry {
   email: string;
   phone?: string;
   message: string;
+  /** Buyer asked to schedule a viewing via the contact form */
+  wantTour?: boolean;
+  tourPreference?: string;
   status: "sent" | "replied";
   createdAt: string;
+}
+
+export type LeadKind = "valuation" | "tour";
+
+/** Home valuation / schedule-tour lead capture (mock until backend wires POST /leads). */
+export interface LeadRequest {
+  id: number;
+  kind: LeadKind;
+  name: string;
+  email: string;
+  phone?: string;
+  message?: string;
+  addressOrListing?: string;
+  propertyId?: number;
+  locale: Locale;
+  createdAt: string;
+  consent: true;
 }
 
 /* ---------------- Subscriptions & billing ---------------- */
@@ -324,6 +348,17 @@ export interface AgentDashboardStats {
   soldCount: number;
   inquiriesTotal: number;
   daily: DailyStat[]; // last 30 days
+}
+
+/** Per-listing traffic row for the analytics drill-down. */
+export interface ListingTrafficRow {
+  id: number;
+  title: string;
+  status: PropertyStatus;
+  city: string;
+  country: string;
+  viewsTotal: number;
+  clicksTotal: number;
 }
 
 /* ---------------- CMS ---------------- */

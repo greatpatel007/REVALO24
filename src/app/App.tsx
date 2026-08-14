@@ -29,6 +29,7 @@ const MyListingsPage = lazy(() => import("@/features/account/MyListingsPage").th
 const ProfilePage = lazy(() => import("@/features/account/ProfilePage").then((m) => ({ default: m.ProfilePage })));
 
 const AgentDashboard = lazy(() => import("@/features/agent/AgentDashboard").then((m) => ({ default: m.AgentDashboard })));
+const AgentAnalytics = lazy(() => import("@/features/agent/AgentAnalytics").then((m) => ({ default: m.AgentAnalytics })));
 const AgentListings = lazy(() => import("@/features/agent/AgentListings").then((m) => ({ default: m.AgentListings })));
 const AgentInquiries = lazy(() => import("@/features/agent/AgentInquiries").then((m) => ({ default: m.AgentInquiries })));
 const ListingEditor = lazy(() => import("@/features/agent/ListingEditor").then((m) => ({ default: m.ListingEditor })));
@@ -96,6 +97,7 @@ function LocaleGate() {
 
           <Route path="agent" element={<AgentLayout />}>
             <Route index element={<AgentDashboard />} />
+            <Route path="analytics" element={<AgentAnalytics />} />
             <Route path="listings" element={<AgentListings />} />
             <Route path="listings/new" element={<ListingEditor />} />
             <Route path="listings/:id/edit" element={<ListingEditor />} />

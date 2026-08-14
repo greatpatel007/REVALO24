@@ -26,11 +26,24 @@ export function fmtEurExact(amount: number, locale: Locale = "en"): string {
 }
 
 /* Demo daily reference rates — production fetches GET /fx/daily (ECB feed).
-   Only the non-EUR target regions (Czechia, Poland) get a display estimate. */
+   Locale-keyed table: CZ/PL UI locales get a display estimate on cards/plans. */
 const FX_DISPLAY: Partial<Record<Locale, { currency: string; rate: number }>> = {
   cs: { currency: "CZK", rate: 24.6 },
   pl: { currency: "PLN", rate: 4.27 },
 };
+
+/** Property-country FX (exposé purchase costs) — independent of UI locale. */
+const FX_BY_COUNTRY: Record<string, { currency: string; rate: number }> = {
+  CZ: { currency: "CZK", rate: 24.6 },
+  PL: { currency: "PLN", rate: 4.27 },
+};
+
+export interface FxQuote {
+  currency: string;
+  rate: number;
+  /** ISO date (YYYY-MM-DD) for the indicative caption */
+  asOf: string;
+}
 
 /** Localized display estimate per proposal §4.1 / §8.2(5): all transactions and
     stored prices are EUR; CZ/PL locales additionally see a converted estimate.
@@ -42,6 +55,22 @@ export function fmtLocalEstimate(amountEur: number, locale: Locale): string | nu
     style: "currency", currency: fx.currency, maximumFractionDigits: 0,
   }).format(amountEur * fx.rate);
   return `≈\u00A0${amount}`;
+}
+
+/** FX quote for a property's country (null for Eurozone / unknown). */
+export function fxForCountry(countryCode: string): FxQuote | null {
+  const fx = FX_BY_COUNTRY[countryCode];
+  if (!fx) return null;
+  return { ...fx, asOf: new Date().toISOString().slice(0, 10) };
+}
+
+/** ≈ local amount for a property country — null when the market is EUR. */
+export function fmtLocalByCountry(amountEur: number, countryCode: string, locale: Locale): string | null {
+  const fx = fxForCountry(countryCode);
+  if (!fx) return null;
+  return `≈\u00A0${new Intl.NumberFormat(locale, {
+    style: "currency", currency: fx.currency, maximumFractionDigits: 0,
+  }).format(amountEur * fx.rate)}`;
 }
 
 export function fmtDate(iso: string, locale: Locale = "en"): string {

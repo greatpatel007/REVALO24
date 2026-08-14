@@ -2,21 +2,23 @@ import { useState, type ReactNode } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowsDownUp, Bathtub, Bed, Blueprint, Buildings, Calculator, CalendarBlank,
-  CaretDown, Door, Heart, Images, Lightning, MapPin, Play, Receipt, Ruler, SealCheck,
+  CaretDown, Door, Heart, Images, MapPin, Panorama, Play, Receipt, Ruler, SealCheck,
   ShareNetwork, Stairs, TrendDown, TrendUp, Tree,
 } from "@phosphor-icons/react";
 import { useI18n } from "@/shared/i18n/I18nContext";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useApi } from "@/shared/lib/useApi";
 import { getListingAgent, getProperty, getSubUnits, priceInsight, unlockOffMarket } from "@/features/property/api";
-import { EnergyClassBadge, EnergyScale } from "@/features/property/EnergyClass";
+import { EnergyScale } from "@/features/property/EnergyClass";
+import { amenityIcon } from "@/features/property/amenityIcons";
+import { getFxQuote } from "@/features/property/fxApi";
 import { OffMarketCover } from "@/features/property/PropertyCard";
 import { useOffMarketAccess } from "@/features/off-market/useOffMarketAccess";
 import { MapCanvas } from "@/features/search/MapCanvas";
 import { sendInquiry } from "@/features/account/api";
 import { useFavorites } from "@/features/account/useFavorites";
 import { PURCHASE_COSTS } from "@/shared/lib/constants";
-import { fmtEur, fmtLocalEstimate, fmtPrice, locationLabel } from "@/shared/lib/format";
+import { fmtDate, fmtEur, fmtLocalByCountry, fmtLocalEstimate, fmtPrice, locationLabel } from "@/shared/lib/format";
 import { Badge } from "@/shared/ui/Badge";
 import { Button } from "@/shared/ui/Button";
 import { Input, Textarea, Consent } from "@/shared/ui/Field";
@@ -27,7 +29,7 @@ import { Skeleton } from "@/shared/ui/Skeleton";
 import { useToast } from "@/shared/ui/Toast";
 import type { Locale, Property } from "@/shared/types";
 
-type MediaTab = "photos" | "video" | "floorplan";
+type MediaTab = "photos" | "video" | "floorplan" | "tour";
 type LightboxState = { tab: MediaTab; idx: number };
 
 function hasVideo(p: Property) {
@@ -35,6 +37,9 @@ function hasVideo(p: Property) {
 }
 function hasFloorPlan(p: Property) {
   return Boolean(p.media.floorPlanUrl);
+}
+function hasTour(p: Property) {
+  return Boolean(p.media.virtualTourUrl);
 }
 
 /* ---- Lightbox: photos + available video / floor-plan (IS24 exposé) ---- */
@@ -46,6 +51,7 @@ function MediaLightbox({
   const { t } = useI18n();
   const video = hasVideo(p);
   const plan = hasFloorPlan(p);
+  const tour = hasTour(p);
   const [tab, setTab] = useState<MediaTab>(initial.tab);
   const [imgIdx, setImgIdx] = useState(initial.idx);
 
@@ -53,6 +59,7 @@ function MediaLightbox({
     { id: "photos" as const, label: t("detail.photos", { n: p.media.images.length }) },
     ...(video ? [{ id: "video" as const, label: t("detail.video") }] : []),
     ...(plan ? [{ id: "floorplan" as const, label: t("detail.floorplan") }] : []),
+    ...(tour ? [{ id: "tour" as const, label: t("detail.tour") }] : []),
   ];
 
   return (
@@ -100,7 +107,7 @@ function MediaLightbox({
         )}
         {tab === "floorplan" && (
           plan && p.media.floorPlanUrl ? (
-            <figure className="overflow-hidden rounded-xl border border-slate-300 bg-white">
+            <figure className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               <img
                 src={p.media.floorPlanUrl}
                 alt={t("detail.floorplan")}
@@ -111,6 +118,24 @@ function MediaLightbox({
             <div className="flex aspect-[16/9] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-400 bg-white text-muted">
               <Blueprint className="size-8" aria-hidden />
               <p className="text-sm font-semibold">{t("detail.planMissing")}</p>
+            </div>
+          )
+        )}
+        {tab === "tour" && (
+          tour && p.media.virtualTourUrl ? (
+            <div className="aspect-[16/9] overflow-hidden rounded-xl bg-navy">
+              <iframe
+                title={t("detail.tour")}
+                src={p.media.virtualTourUrl}
+                className="h-full w-full"
+                allow="fullscreen; xr-spatial-tracking; accelerometer; gyroscope"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <div className="flex aspect-[16/9] flex-col items-center justify-center gap-2 rounded-xl bg-navy text-slate-400">
+              <Panorama weight="duotone" className="size-10" aria-hidden />
+              <p className="text-sm font-semibold">{t("detail.tourMissing")}</p>
             </div>
           )
         )}
@@ -129,6 +154,7 @@ function MediaTypeStrip({
   const { t } = useI18n();
   const video = hasVideo(p);
   const plan = hasFloorPlan(p);
+  const tour = hasTour(p);
 
   const chip = (
     available: boolean,
@@ -138,6 +164,13 @@ function MediaTypeStrip({
     missingHint: string,
     onClick?: () => void,
   ) => {
+    const body = (
+      <>
+        <span className="inline-flex size-4.5 shrink-0 items-center justify-center [&>svg]:size-4.5">{icon}</span>
+        <span className="whitespace-nowrap">{kindLabel}</span>
+        <span className="whitespace-nowrap font-bold">{available ? actionLabel : t("detail.mediaUnavailable")}</span>
+      </>
+    );
     if (available && onClick) {
       return (
         <button
@@ -145,9 +178,7 @@ function MediaTypeStrip({
           onClick={onClick}
           className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-action/40 bg-blue-50 px-3.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
         >
-          {icon}
-          <span>{kindLabel}</span>
-          <span className="font-bold">{actionLabel}</span>
+          {body}
         </button>
       );
     }
@@ -156,9 +187,7 @@ function MediaTypeStrip({
         title={missingHint}
         className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-canvas/70 px-3.5 text-sm font-semibold text-slate-400"
       >
-        {icon}
-        <span>{kindLabel}</span>
-        <span className="font-bold">{t("detail.mediaUnavailable")}</span>
+        {body}
       </span>
     );
   };
@@ -173,7 +202,7 @@ function MediaTypeStrip({
         video,
         t("detail.video"),
         t("detail.videoWatch"),
-        <Play weight="fill" className="size-4.5 shrink-0" aria-hidden />,
+        <Play weight="fill" aria-hidden />,
         t("detail.videoMissing"),
         video ? () => onOpen({ tab: "video", idx: 0 }) : undefined,
       )}
@@ -181,9 +210,17 @@ function MediaTypeStrip({
         plan,
         t("detail.floorplan"),
         t("detail.floorplanView"),
-        <Blueprint weight="duotone" className="size-4.5 shrink-0" aria-hidden />,
+        <Blueprint weight="duotone" aria-hidden />,
         t("detail.planMissing"),
         plan ? () => onOpen({ tab: "floorplan", idx: 0 }) : undefined,
+      )}
+      {chip(
+        tour,
+        t("detail.tour"),
+        t("detail.tourWatch"),
+        <Panorama weight="duotone" aria-hidden />,
+        t("detail.tourMissing"),
+        tour ? () => onOpen({ tab: "tour", idx: 0 }) : undefined,
       )}
     </div>
   );
@@ -246,6 +283,7 @@ function Gallery({ p, onOpen }: { p: Property; onOpen: (state: LightboxState) =>
 function PurchaseCostsCard({ p, locale }: { p: Property; locale: Locale }) {
   const { t } = useI18n();
   const rates = PURCHASE_COSTS[p.location.countryCode];
+  const { data: fx } = useApi(() => getFxQuote(p.location.countryCode), [p.location.countryCode]);
   if (!rates) return null;
   const rows = (
     [
@@ -254,7 +292,8 @@ function PurchaseCostsCard({ p, locale }: { p: Property; locale: Locale }) {
       [t("detail.agentFee"), rates.agentFee],
     ] as [string, number][]
   ).filter(([, pct]) => pct > 0);
-  const extra = rows.reduce((sum, [, pct]) => sum + (p.price * pct) / 100, 0);
+  const totalEur = Math.round(p.price + rows.reduce((sum, [, pct]) => sum + (p.price * pct) / 100, 0));
+  const localTotal = fmtLocalByCountry(totalEur, p.location.countryCode, locale);
 
   const row = (label: string, value: string, bold = false) => (
     <div key={label} className={`flex items-baseline justify-between gap-4 py-2.5 ${bold ? "font-extrabold" : ""}`}>
@@ -264,7 +303,7 @@ function PurchaseCostsCard({ p, locale }: { p: Property; locale: Locale }) {
   );
 
   return (
-    <details open className="group mt-8 rounded-xl border border-slate-300 bg-white">
+    <details open className="group mt-10 rounded-xl border border-slate-200 bg-white">
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
         <span className="flex items-center gap-2 font-display text-lg font-bold">
           <Receipt weight="duotone" className="size-5 text-blue-600" aria-hidden /> {t("detail.costs")}
@@ -275,8 +314,24 @@ function PurchaseCostsCard({ p, locale }: { p: Property; locale: Locale }) {
         <dl className="divide-y divide-slate-200 text-sm">
           {row(t("detail.purchasePrice"), fmtEur(p.price, locale))}
           {rows.map(([label, pct]) => row(`${label} (${pct.toLocaleString(locale)} %)`, fmtEur(Math.round((p.price * pct) / 100), locale)))}
-          {row(t("detail.totalIncl"), fmtEur(Math.round(p.price + extra), locale), true)}
+          {row(t("detail.totalIncl"), fmtEur(totalEur, locale), true)}
         </dl>
+        {localTotal && fx && (
+          <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs text-muted">
+            <span className="font-semibold tabular text-slate-700">{localTotal}</span>
+            <span aria-hidden className="text-slate-300">·</span>
+            <span className="tabular">
+              {t("detail.fxRatePair", {
+                rate: fx.rate.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                currency: fx.currency,
+              })}
+            </span>
+            <span aria-hidden className="text-slate-300">·</span>
+            <span>{t("detail.fxIndicative")}</span>
+            <span aria-hidden className="text-slate-300">·</span>
+            <time dateTime={fx.asOf}>{fmtDate(fx.asOf, locale)}</time>
+          </p>
+        )}
         <p className="mt-3 text-xs text-muted">{t("detail.costsNote", { country: p.location.country })}</p>
       </div>
     </details>
@@ -378,7 +433,7 @@ function SubUnitsSection({ masterId, localeTo, locale }: { masterId: number; loc
   const available = units.filter((u) => u.status !== "sold").length;
 
   return (
-    <section className="mt-8">
+    <section className="mt-10">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-display text-lg font-bold">
           <Buildings weight="duotone" className="size-5 text-blue-600" aria-hidden />
@@ -399,7 +454,7 @@ function SubUnitsSection({ masterId, localeTo, locale }: { masterId: number; loc
           const sold = u.status === "sold";
           const unitLabel = u.title.split("·")[1]?.trim() ?? u.title;
           return (
-            <li key={u.id} className={`rounded-xl border border-slate-300 bg-white p-3.5 ${sold ? "opacity-55" : ""}`}>
+            <li key={u.id} className={`rounded-xl border border-slate-200 bg-white p-3.5 ${sold ? "opacity-55" : ""}`}>
               <div className="flex items-start justify-between gap-3">
                 <p className="text-sm font-semibold">{unitLabel}</p>
                 <p className="shrink-0 text-sm font-bold tabular">{fmtEur(u.price, locale)}</p>
@@ -421,7 +476,7 @@ function SubUnitsSection({ masterId, localeTo, locale }: { masterId: number; loc
         })}
       </ul>
 
-      <div className="hidden overflow-x-auto rounded-xl border border-slate-300 bg-white scrollbar-thin md:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white scrollbar-thin md:block">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="border-b border-slate-300 text-left">
@@ -495,7 +550,7 @@ function GatedDetail({ p, onUnlocked }: { p: Property; onUnlocked: () => void })
   );
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted">
         <Link to={to("/off-market")} className="inline-flex items-center gap-1.5 font-semibold text-blue-700 hover:underline">
           <ArrowLeft className="size-4" aria-hidden /> {t("nav.offmarket")}
@@ -521,7 +576,7 @@ function GatedDetail({ p, onUnlocked }: { p: Property; onUnlocked: () => void })
 
       <div className="mt-6 grid gap-5 sm:grid-cols-[1fr_320px]">
         {/* Non-identifying summary (spec: type + region-level only) */}
-        <div className="rounded-xl border border-slate-300 bg-white p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="t-overline mb-3 text-muted">{t("gate.summary")}</p>
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
             {[
@@ -608,6 +663,7 @@ export function PropertyDetailPage() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [wantTour, setWantTour] = useState(false);
 
   /* Query-preserving back link, set by PropertyCard when arriving from search */
   const backTo = (location.state as { back?: string } | null)?.back;
@@ -646,12 +702,15 @@ export function PropertyDetailPage() {
       propertyId: p.id, propertyTitle: p.title,
       name: String(fd.get("name")), email: String(fd.get("email")),
       phone: String(fd.get("phone") || ""), message: String(fd.get("message")),
+      wantTour,
+      tourPreference: wantTour ? String(fd.get("tourPreference") || "") || undefined : undefined,
     })
       .then(() => {
         toast(t("detail.inquirySent"));
         /* Reset only after success so a failed send keeps the user's input */
         form.reset();
         setConsent(false);
+        setWantTour(false);
         setSent(true);
       })
       .catch(() => toast(t("detail.inquiryFail"), "error"))
@@ -679,9 +738,6 @@ export function PropertyDetailPage() {
     { label: t("detail.bathrooms"), value: String(p.bathrooms), icon: Bathtub },
     ...(p.floor != null ? [{ label: t("detail.floor"), value: String(p.floor), icon: Stairs }] : []),
     ...(p.yearBuilt ? [{ label: t("detail.yearBuilt"), value: String(p.yearBuilt), icon: CalendarBlank }] : []),
-    ...(p.energyRating
-      ? [{ label: t("detail.energyClass"), value: <EnergyClassBadge rating={p.energyRating} />, icon: Lightning }]
-      : []),
   ];
 
   /* €/m² vs city average (IS24 Preiskarte, reduced to an honest mock) */
@@ -689,7 +745,7 @@ export function PropertyDetailPage() {
   const deltaPct = insight.cityAvg ? Math.round(((insight.sqm - insight.cityAvg) / insight.cityAvg) * 100) : null;
 
   return (
-    <div className="mx-auto max-w-shell px-4 pb-24 pt-6 sm:px-6 sm:pb-8 lg:pt-8">
+    <div className="mx-auto max-w-shell px-4 pb-24 pt-8 sm:px-6 sm:pb-8 lg:pt-10">
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted">
         {backTo ? (
           <Link to={backTo} className="inline-flex items-center gap-1.5 font-semibold text-blue-700 hover:underline">
@@ -718,16 +774,10 @@ export function PropertyDetailPage() {
         </div>
       )}
 
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="mb-1.5 flex flex-wrap items-center gap-2">
-            {p.placement === "top" && <Badge tone="action">{t("card.top")}</Badge>}
-            {p.placement === "featured" && <Badge tone="premium">{t("card.featured")}</Badge>}
-            {p.isNewConstruction && <Badge tone="info">{t("card.newBuild")}</Badge>}
-            <Badge tone={p.listingType === "buy" ? "success" : "info"}>{p.listingType === "buy" ? t("search.forSale") : t("search.forRent")}</Badge>
-          </div>
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <div className="min-w-0 flex-1">
           <h1 className="font-display text-2xl font-extrabold sm:text-3xl">{p.title}</h1>
-          <p className="flex items-center gap-1 text-muted">
+          <p className="mt-1 flex items-center gap-1 text-muted">
             <MapPin className="size-4 shrink-0" aria-hidden />
             {locationLabel(p)}{p.location.street ? ` · ${p.location.street}` : ""}
           </p>
@@ -737,46 +787,48 @@ export function PropertyDetailPage() {
             </Link>
           )}
         </div>
-        <div className="flex flex-col items-start gap-2 sm:items-end sm:text-right">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onToggleFavorite(p.id)}
-              aria-label={isFavorite ? t("card.removeFav") : t("card.addFav")}
-              aria-pressed={isFavorite}
-              className="flex size-11 cursor-pointer items-center justify-center rounded-lg border border-slate-400 bg-white transition-colors hover:bg-slate-100"
-            >
-              <Heart weight={isFavorite ? "fill" : "regular"} className={`size-5 ${isFavorite ? "text-err-600" : "text-slate-700"}`} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={onShare}
-              aria-label={t("detail.share")}
-              className="flex size-11 cursor-pointer items-center justify-center rounded-lg border border-slate-400 bg-white transition-colors hover:bg-slate-100"
-            >
-              <ShareNetwork className="size-5 text-slate-700" aria-hidden />
-            </button>
+        <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end sm:text-right">
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+            <p className="font-display text-3xl font-extrabold tabular">{fmtPrice(p, locale)}</p>
+            <div className="flex shrink-0 gap-2">
+              <button
+                type="button"
+                onClick={() => onToggleFavorite(p.id)}
+                aria-label={isFavorite ? t("card.removeFav") : t("card.addFav")}
+                aria-pressed={isFavorite}
+                className="flex size-11 cursor-pointer items-center justify-center rounded-lg border border-slate-400 bg-white transition-colors hover:bg-slate-100"
+              >
+                <Heart weight={isFavorite ? "fill" : "regular"} className={`size-5 ${isFavorite ? "text-err-600" : "text-slate-700"}`} aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={onShare}
+                aria-label={t("detail.share")}
+                className="flex size-11 cursor-pointer items-center justify-center rounded-lg border border-slate-400 bg-white transition-colors hover:bg-slate-100"
+              >
+                <ShareNetwork className="size-5 text-slate-700" aria-hidden />
+              </button>
+            </div>
           </div>
-          <p className="font-display text-3xl font-extrabold tabular">{fmtPrice(p, locale)}</p>
           {/* CZ/PL display estimate — EUR stays the fiscal base (§4.1) */}
           {fmtLocalEstimate(p.price, locale) && (
-            <p className="mt-0.5 text-sm font-semibold tabular text-muted">
+            <p className="text-sm font-semibold tabular text-muted">
               {fmtLocalEstimate(p.price, locale)} <span className="font-normal">· {t("fx.note")}</span>
             </p>
           )}
-          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm sm:justify-end">
+          <p className="flex flex-wrap items-center gap-2 text-sm sm:justify-end">
             <span className="font-semibold tabular text-muted">
               {fmtEur(Math.round(insight.sqm), locale)}/m²{p.listingType === "rent" ? ` · ${t("detail.monthly")}` : ""}
             </span>
             {deltaPct !== null && Math.abs(deltaPct) >= 1 && (
               <span
-                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
                   deltaPct < 0 ? "bg-emerald-50 text-emerald-700" : "bg-slate-200 text-slate-700"
                 }`}
               >
                 {deltaPct < 0
-                  ? <TrendDown weight="bold" className="size-3.5" aria-hidden />
-                  : <TrendUp weight="bold" className="size-3.5" aria-hidden />}
+                  ? <TrendDown weight="bold" className="size-3.5 shrink-0" aria-hidden />
+                  : <TrendUp weight="bold" className="size-3.5 shrink-0" aria-hidden />}
                 {t(deltaPct < 0 ? "detail.belowAvg" : "detail.aboveAvg", { pct: Math.abs(deltaPct), city: p.location.city })}
               </span>
             )}
@@ -799,9 +851,15 @@ export function PropertyDetailPage() {
           )}
 
           {/* ---- Facts ---- */}
-          <section className="mt-8">
+          <section className="mt-10">
             <h2 className="mb-3 font-display text-lg font-bold">{t("detail.keyFacts")}</h2>
-            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-xl border border-slate-300 bg-white p-5 sm:grid-cols-4">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              {p.placement === "top" && <Badge tone="action">{t("card.top")}</Badge>}
+              {p.placement === "featured" && <Badge tone="premium">{t("card.featured")}</Badge>}
+              {p.isNewConstruction && <Badge tone="info">{t("card.newBuild")}</Badge>}
+              <Badge tone={p.listingType === "buy" ? "success" : "info"}>{p.listingType === "buy" ? t("search.forSale") : t("search.forRent")}</Badge>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-4">
               {facts.map((f) => (
                 <div key={f.label} className="flex items-start gap-2.5">
                   <f.icon weight="duotone" className="mt-0.5 size-5 shrink-0 text-blue-600" aria-hidden />
@@ -815,7 +873,7 @@ export function PropertyDetailPage() {
 
             {/* EPBD: the energy class must be visible in the ad — full official ladder */}
             {p.energyRating && (
-              <div className="mt-4 rounded-xl border border-slate-300 bg-white p-5">
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-bold">{t("detail.energyTitle")}</h3>
                   <span className="text-xs text-muted">{t("detail.energyCert")}{p.yearBuilt ? ` · ${t("detail.built", { y: p.yearBuilt })}` : ""}</span>
@@ -854,6 +912,29 @@ export function PropertyDetailPage() {
             )}
           </section>
 
+          <section className="mt-10">
+            <h2 className="mb-3 font-display text-lg font-bold">{t("detail.description")}</h2>
+            <p className="hyphens-auto whitespace-pre-line leading-relaxed text-slate-800">{p.description}</p>
+          </section>
+
+          {/* Hidden when the listing carries no amenity data (import edge case) */}
+          {p.amenities.length > 0 && (
+            <section className="mt-10">
+              <h2 className="mb-3 font-display text-lg font-bold">{t("detail.amenities")}</h2>
+              <ul className="flex flex-wrap gap-2">
+                {p.amenities.map((a) => {
+                  const Icon = amenityIcon(a);
+                  return (
+                    <li key={a} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-800">
+                      <Icon weight="duotone" className="size-4.5 shrink-0 text-blue-600" aria-hidden />
+                      {t(`amen.${a}`)}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
           {/* ---- Purchase costs (buy only) ---- */}
           {p.listingType === "buy" && <PurchaseCostsCard p={p} locale={locale} />}
 
@@ -862,27 +943,10 @@ export function PropertyDetailPage() {
             <SubUnitsSection masterId={p.id} localeTo={to} locale={locale} />
           )}
 
-          <section className="mt-8">
-            <h2 className="mb-3 font-display text-lg font-bold">{t("detail.description")}</h2>
-            <p className="hyphens-auto whitespace-pre-line leading-relaxed text-slate-800">{p.description}</p>
-          </section>
-
-          {/* Hidden when the listing carries no amenity data (import edge case) */}
-          {p.amenities.length > 0 && (
-            <section className="mt-8">
-              <h2 className="mb-3 font-display text-lg font-bold">{t("detail.amenities")}</h2>
-              <ul className="flex flex-wrap gap-2">
-                {p.amenities.map((a) => (
-                  <li key={a} className="rounded-lg bg-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-800">✓ {t(`amen.${a}`)}</li>
-                ))}
-              </ul>
-            </section>
-          )}
-
           {/* ---- Location map snippet (spec Screen 4) — city-level viewport ---- */}
-          <section className="mt-8">
+          <section className="mt-10">
             <h2 className="mb-3 font-display text-lg font-bold">{t("detail.location")}</h2>
-            <div className="h-72 overflow-hidden rounded-xl border border-slate-300">
+            <div className="h-72 overflow-hidden rounded-xl border border-slate-200">
               <MapCanvas properties={[p]} center={p.location.geo} zoom={13} interactive={false} />
             </div>
             <Link
@@ -896,8 +960,8 @@ export function PropertyDetailPage() {
 
         {/* ---- Sidebar: contact form, then optional financing (separate surface) ---- */}
         <aside>
-          <div className="sticky top-36 flex flex-col gap-6">
-            <div id="contact-agent" className="scroll-mt-24 rounded-xl border border-slate-300 bg-white p-5 shadow-elevation-sm">
+          <div className="sticky top-20 flex flex-col gap-6">
+            <div id="contact-agent" className="scroll-mt-20 rounded-xl border border-slate-200 bg-white p-5">
               <div className="mb-4 flex items-center gap-3">
                 <span aria-hidden className="flex size-12 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
                   {(agent?.name ?? "•").charAt(0)}
@@ -928,6 +992,23 @@ export function PropertyDetailPage() {
                 <Input name="email" type="email" label={t("form.email")} required autoComplete="email" />
                 <Input name="phone" type="tel" label={t("form.phone")} hint={t("form.optional")} autoComplete="tel" />
                 <Textarea name="message" label={t("form.message")} required defaultValue={t("detail.msgDefault", { title: p.title })} />
+                <label className="flex min-h-6 cursor-pointer items-start gap-3 text-sm text-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={wantTour}
+                    onChange={(e) => setWantTour(e.target.checked)}
+                    className="mt-0.5 size-5 shrink-0 cursor-pointer accent-action"
+                  />
+                  <span className="font-semibold">{t("detail.wantTour")}</span>
+                </label>
+                {wantTour && (
+                  <Input
+                    name="tourPreference"
+                    label={`${t("detail.tourPreference")} ${t("form.optionalTag")}`}
+                    hint={t("detail.tourPreferenceHint")}
+                    placeholder={t("detail.tourPreferencePh")}
+                  />
+                )}
                 <Consent checked={consent} onChange={setConsent}>
                   {t("form.consentPre")} <Link to={to("/legal/privacy")} className="font-semibold text-blue-700 underline">{t("form.privacy")}</Link>{t("form.consentPost")}
                 </Consent>

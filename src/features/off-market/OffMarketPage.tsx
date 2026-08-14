@@ -39,7 +39,7 @@ export function OffMarketPage() {
   return (
     <>
       <section className="bg-navy">
-        <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
+        <div className="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6">
           <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-premium text-premium-accent"><LockIcon /></span>
           <p className="t-overline mb-2 text-champagne-100/80">{t("off.overline")}</p>
           <h1 className="mb-3 font-display text-3xl font-extrabold text-white sm:text-4xl">{t("off.title")}</h1>
@@ -55,13 +55,13 @@ export function OffMarketPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-shell px-4 py-12 sm:px-6">
+      <section className="mx-auto max-w-shell px-4 py-16 sm:px-6">
         <h2 className="mb-5 font-display text-xl font-extrabold">{t("off.current")}</h2>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {/* Cards open the unlock dialog — linking back to this page would be a dead loop */}
           {(data ?? []).map((p) => <PropertyCard key={p.id} property={p} onOffMarketClick={() => setModal(true)} />)}
         </div>
-        <div className="mt-10 grid gap-5 rounded-xl border border-slate-300 bg-white p-6 sm:grid-cols-3">
+        <div className="mt-10 grid gap-5 rounded-xl border border-slate-200 bg-white p-6 sm:grid-cols-3">
           {[
             [t("off.step1t"), t("off.step1b")],
             [t("off.step2t"), t("off.step2b")],

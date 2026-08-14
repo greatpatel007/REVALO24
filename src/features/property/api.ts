@@ -82,12 +82,17 @@ export async function getListingAgent(agentId: number): Promise<ListingAgent> {
 export async function getFeatured(): Promise<Property[]> {
   if (!USE_MOCKS) return request<{ data: Property[] }>("/properties", { params: { placement: "any" } }).then((r) => r.data);
   await mockDelay(200);
-  /* Top placements first; capped at 8 so the home grid fills exact rows at
-     lg (3+3+2) and 2xl (4+4) — same card scale as the search list */
-  return PROPERTIES
+  /* Cap at 12 = LCM of grid columns (1 / 2 / 3 / 4) so every breakpoint
+     fills complete rows: sm 6×2, lg 4×3, 2xl 3×4 — never a short last row. */
+  const TARGET = 12;
+  const placed = PROPERTIES
     .filter((p) => p.placement && p.status === "active")
-    .sort((a, b) => (a.placement === "top" ? 0 : 1) - (b.placement === "top" ? 0 : 1))
-    .slice(0, 8);
+    .sort((a, b) => (a.placement === "top" ? 0 : 1) - (b.placement === "top" ? 0 : 1));
+  if (placed.length >= TARGET) return placed.slice(0, TARGET);
+  /* Pad with other active listings so the home grid never ends mid-row. */
+  const ids = new Set(placed.map((p) => p.id));
+  const pad = PROPERTIES.filter((p) => p.status === "active" && !p.offMarket && !p.masterProjectId && !ids.has(p.id));
+  return [...placed, ...pad].slice(0, TARGET);
 }
 
 /** Sub-units of a New Construction master project — GET /properties/{id}/units */

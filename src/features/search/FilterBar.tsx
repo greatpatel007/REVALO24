@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Field";
 import { Modal } from "@/shared/ui/Modal";
 import { useToast } from "@/shared/ui/Toast";
+import { PRICE_TIERS, priceTierQuery } from "@/shared/lib/priceTiers";
 import type { AlertFrequency, ListingType, Locale, PropertyFilters } from "@/shared/types";
 
 /* One search experience, two views: the URL query string is the single
@@ -306,6 +307,32 @@ export function FilterBar({ sticky = false, total }: FilterBarProps) {
             : t("search.price"), !!(filters.priceMin || filters.priceMax))}
         </span>
         <div className={`${openPill === "price" ? "block" : "hidden"} max-lg:block max-lg:static max-lg:mt-0 max-lg:w-full max-lg:border-0 max-lg:p-0 max-lg:shadow-none ${panel}`}>
+          <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label={t("filter.tier.aria")}>
+            {PRICE_TIERS.map((tier) => {
+              const active =
+                (tier.min ?? 0) === (filters.priceMin ?? 0) &&
+                (tier.max ?? 0) === (filters.priceMax ?? 0) &&
+                (filters.priceMin != null || filters.priceMax != null);
+              return (
+                <button
+                  key={tier.id}
+                  type="button"
+                  onClick={() => {
+                    const q = priceTierQuery(tier);
+                    set({ min: q.min, max: q.max });
+                    setOpenPill(null);
+                  }}
+                  className={`inline-flex min-h-11 items-center rounded-lg border px-3.5 text-sm font-semibold tabular transition-colors ${
+                    active
+                      ? "border-action bg-blue-50 text-blue-700"
+                      : "border-slate-300 bg-white text-navy hover:border-action hover:bg-blue-50"
+                  }`}
+                >
+                  {t(tier.labelKey)}
+                </button>
+              );
+            })}
+          </div>
           {/* key remounts the uncontrolled inputs when the URL value changes (e.g. Reset) */}
           <div className="flex items-center gap-2">
             <input type="number" inputMode="numeric" placeholder="Min €" key={`min-${filters.priceMin ?? ""}`} defaultValue={filters.priceMin ?? ""} aria-label={t("search.minPrice")}

@@ -47,17 +47,21 @@ export function CookieBanner() {
   ];
 
   return (
-    <div role="region" aria-label="Cookie consent" className="fixed inset-x-0 bottom-0 z-110 border-t border-slate-300 bg-white p-4 shadow-elevation-lg">
+    <div
+      role="region"
+      aria-label="Cookie consent"
+      className="fixed inset-x-0 bottom-0 z-110 border-t border-slate-300 bg-white p-3 shadow-elevation-lg max-lg:bottom-[var(--r24-agent-tab-h,0px)] sm:p-4"
+    >
       <div className="mx-auto max-w-shell">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <p className="flex-1 text-sm text-slate-800">
             {t("cookie.text")}{" "}
             <Link to={to("/legal/cookies")} className="font-semibold text-blue-700 underline">{t("cookie.policy")}</Link>
           </p>
-          <div className="flex flex-wrap gap-2">
-            <Button size="md" onClick={() => decide("all")}>{t("cookie.acceptAll")}</Button>
-            <Button size="md" variant="secondary" onClick={() => decide("essential")}>{t("cookie.reject")}</Button>
-            <Button size="md" variant="ghost" aria-expanded={manage} onClick={() => setManage((v) => !v)}>
+          <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-3 sm:flex sm:flex-wrap">
+            <Button size="md" className="w-full sm:w-auto" onClick={() => decide("all")}>{t("cookie.acceptAll")}</Button>
+            <Button size="md" variant="secondary" className="w-full sm:w-auto" onClick={() => decide("essential")}>{t("cookie.reject")}</Button>
+            <Button size="md" variant="ghost" className="w-full sm:w-auto" aria-expanded={manage} onClick={() => setManage((v) => !v)}>
               {t("cookie.manage")}
             </Button>
           </div>

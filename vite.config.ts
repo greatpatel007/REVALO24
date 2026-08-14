@@ -24,6 +24,10 @@ export default defineConfig({
           if (id.includes("@googlemaps/markerclusterer")) {
             return "gmaps-cluster";
           }
+          /* Isolate icons so entry stays lean; tree-shaken named imports only. */
+          if (id.includes("@phosphor-icons/react")) {
+            return "phosphor";
+          }
           if (
             id.includes("node_modules/react-dom") ||
             id.includes("node_modules/react-router") ||

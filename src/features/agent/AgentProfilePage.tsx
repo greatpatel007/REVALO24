@@ -302,7 +302,7 @@ export function AgentProfilePage() {
                 <Input label={t("agent.prof.company")} required value={form.companyName} onChange={setField("companyName")} />
                 <Input label={t("agent.prof.contact")} required value={form.contactPerson} onChange={setField("contactPerson")} />
                 <Input label={t("agent.ed.street")} required value={form.addressStreet} onChange={setField("addressStreet")} autoComplete="street-address" />
-                <div className="grid grid-cols-[130px_1fr] gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,7.5rem)_1fr]">
                   <Input label={t("agent.ed.zip")} required value={form.addressPostalCode} onChange={setField("addressPostalCode")} autoComplete="postal-code" />
                   <Input label={t("agent.ed.city")} required value={form.addressCity} onChange={setField("addressCity")} autoComplete="address-level2" />
                 </div>
